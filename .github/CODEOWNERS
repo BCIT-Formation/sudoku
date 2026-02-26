@@ -1,0 +1,9 @@
+# CODEOWNERS
+# Each line assigns code owners for specific paths.
+# Owners are automatically requested for review when a PR modifies those paths.
+
+# Global owner — all files
+* @BardinConsulting
+
+# CI/CD configuration — stricter review
+.github/workflows/ @BardinConsulting

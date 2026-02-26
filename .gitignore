@@ -1,17 +1,35 @@
-# Dependencies
+# ── Dependencies ─────────────────────────────────────────────
 node_modules/
 
-# Next.js build output
+# ── Next.js ──────────────────────────────────────────────────
 .next/
 out/
 
-# Environment files
+# ── Environment — never commit real secrets ───────────────────
 .env
 .env.local
 .env.*.local
 
-# OS
-.DS_Store
+# ── Test / coverage ──────────────────────────────────────────
+coverage/
+.nyc_output/
 
-# Debug
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.pem
+
+# ── Debug / logs ─────────────────────────────────────────────
 npm-debug.log*
+yarn-debug.log*
+.pnpm-debug.log*
+
+# ── Build artifacts ──────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Editor ───────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo

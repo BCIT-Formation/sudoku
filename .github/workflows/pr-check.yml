@@ -1,0 +1,59 @@
+name: PR Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  conventional-title:
+    name: Validate PR title (Conventional Commits)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check PR title format
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          # Pattern: <type>(<optional scope>)<optional !>: <description>
+          PATTERN="^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?(!)?: .+"
+
+          if echo "$TITLE" | grep -qE "$PATTERN"; then
+            echo "PR title is valid: $TITLE"
+          else
+            echo "ERROR: PR title does not follow Conventional Commits format."
+            echo ""
+            echo "Title received: $TITLE"
+            echo ""
+            echo "Expected format: <type>(<scope>)?: <description>"
+            echo ""
+            echo "Valid types:"
+            echo "  feat     - A new feature"
+            echo "  fix      - A bug fix"
+            echo "  docs     - Documentation only changes"
+            echo "  style    - Formatting, no logic change"
+            echo "  refactor - Code change that neither fixes a bug nor adds a feature"
+            echo "  test     - Adding or updating tests"
+            echo "  chore    - Maintenance, dependencies, tooling"
+            echo "  perf     - Performance improvement"
+            echo "  ci       - CI/CD changes"
+            echo "  build    - Build system changes"
+            echo "  revert   - Reverts a previous commit"
+            echo ""
+            echo "Examples:"
+            echo "  feat: add PDF compression"
+            echo "  fix(pdf): correct grid alignment on A4"
+            echo "  chore: update jspdf to v4.3"
+            echo "  docs: add offline usage instructions"
+            exit 1
+          fi
+
+  # Ensure CI job name matches what you add to branch protection rules
+  ci-required:
+    name: CI must pass
+    runs-on: ubuntu-latest
+    needs: conventional-title
+    steps:
+      - name: All PR checks passed
+        run: echo "PR checks passed."

@@ -1,0 +1,208 @@
+# Generateur de Sudoku
+
+[![CI](https://github.com/BardinConsulting/sudoku/actions/workflows/ci.yml/badge.svg)](https://github.com/BardinConsulting/sudoku/actions/workflows/ci.yml)
+[![Release](https://github.com/BardinConsulting/sudoku/actions/workflows/release.yml/badge.svg)](https://github.com/BardinConsulting/sudoku/actions/workflows/release.yml)
+[![Security](https://github.com/BardinConsulting/sudoku/actions/workflows/security.yml/badge.svg)](https://github.com/BardinConsulting/sudoku/actions/workflows/security.yml)
+
+Application web de generation de grilles de sudoku, exportables en PDF pour impression.
+Fonctionne **entierement dans le navigateur** — aucune connexion internet requise apres le premier chargement.
+
+---
+
+## Fonctionnalites
+
+- **Generation aleatoire** de 1 a 99 grilles par lot
+- **Difficulte reglable** de 1 (Tres facile) a 10 (Expert)
+- **Export PDF** A4 — 2 grilles par page, mise en page optimisee pour l'impression
+- **Solutions optionnelles** en fin de PDF (4 par page)
+- **Apercu en direct** des 20 premieres grilles dans le navigateur
+- **100 % client-side** — Next.js + React, aucun appel serveur, aucune donnee utilisateur collectee
+- **PDF genere localement** via jsPDF (charge dynamiquement uniquement au clic)
+
+---
+
+## Architecture
+
+```
+sudoku/
+├── app/                   # Next.js App Router
+│   ├── layout.js          # Metadata, import CSS global
+│   ├── page.js            # UI principale (client component)
+│   └── globals.css        # Tailwind + styles slider custom
+├── lib/
+│   └── sudoku.js          # Algorithme generateur + rendu PDF
+├── tests/
+│   └── sudoku.test.js     # Tests unitaires (node:test natif)
+├── .github/
+│   ├── dependabot.yml     # Mises a jour auto des dependances
+│   └── workflows/
+│       ├── ci.yml         # Lint → Test → Build sur chaque push/PR
+│       ├── release.yml    # Release automatique via release-please
+│       ├── pr-check.yml   # Validation titre PR (Conventional Commits)
+│       └── security.yml   # npm audit + CodeQL (hebdomadaire)
+├── jsconfig.json          # Alias de chemins (@/*)
+├── next.config.mjs        # Configuration Next.js
+├── tailwind.config.mjs    # Configuration Tailwind CSS
+└── postcss.config.mjs     # Configuration PostCSS
+```
+
+### Algorithme Sudoku (lib/sudoku.js)
+
+| Fonction | Role |
+|---|---|
+| `shuffle(arr)` | Fisher-Yates — melange aleatoire |
+| `isValid(board, r, c, n)` | Verifie contraintes ligne/colonne/boite |
+| `solve(board, shuffle?)` | Backtracking recursif (shuffle=true → generation aleatoire) |
+| `generateSudoku(difficulty)` | Genere un puzzle + sa solution |
+| `getDifficultyLabel(d)` | Label lisible par l'humain |
+| `drawGridOnPDF(doc, board, x, y, size)` | Dessin jsPDF d'une grille |
+
+**Formule difficulte** : `cellules_retirees = round(25 + (difficulte - 1) * 3.67)`
+- Difficulte 1 → 25 retirees (56 indices) — Tres facile
+- Difficulte 5 → 40 retirees (41 indices) — Moyen
+- Difficulte 10 → 58 retirees (23 indices) — Expert
+
+---
+
+## Prerequis
+
+- **Node.js** 20 ou superieur
+- **npm** 10 ou superieur
+
+---
+
+## Installation
+
+```bash
+# Cloner le depot
+git clone https://github.com/BardinConsulting/sudoku.git
+cd sudoku
+
+# Installer les dependances
+npm install
+
+# Demarrer en mode developpement
+npm run dev
+```
+
+Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
+
+---
+
+## Scripts disponibles
+
+| Commande | Description |
+|---|---|
+| `npm run dev` | Serveur de developpement (hot reload) |
+| `npm run build` | Build de production |
+| `npm start` | Serveur de production |
+| `npm test` | Tests unitaires (node:test) |
+| `npm run lint` | Lint ESLint via Next.js |
+
+---
+
+## Usage
+
+1. Choisir la **difficulte** (curseur 1-10)
+2. Definir le **nombre de grilles** (1 a 99, via le champ ou les boutons +/-)
+3. Cocher **Inclure les solutions** si souhaite
+4. Cliquer **Generer** — apercu immediat dans le navigateur
+5. Cliquer **Exporter en PDF** — telechargement du fichier `sudoku-N-grilles-diffX.pdf`
+
+### Utilisation hors-ligne
+
+Apres le premier chargement, l'application fonctionne sans internet.
+Pour un deploiement local permanent :
+
+```bash
+npm run build
+npm start
+# Ouvrir http://localhost:3000
+```
+
+---
+
+## Variables d'environnement
+
+Aucune variable d'environnement n'est requise.
+Ce projet n'utilise pas de backend, base de donnees, ni service tiers.
+
+Voir `.env.example` pour le template reserve aux futurs besoins.
+
+---
+
+## Deploiement Vercel
+
+```bash
+# Option 1 : via Vercel CLI
+npm i -g vercel
+vercel
+
+# Option 2 : via Git
+# Connecter le repo BardinConsulting/sudoku a vercel.com
+# Framework detecte automatiquement : Next.js
+# Build command : npm run build
+# Output directory : .next
+```
+
+---
+
+## Contribution
+
+### Workflow Git
+
+```
+main          <- production, proteges
+develop       <- integration (optionnel)
+feat/xxx      <- nouvelles fonctionnalites
+fix/xxx       <- corrections de bugs
+chore/xxx     <- maintenance
+```
+
+### Conventional Commits
+
+Tous les commits et titres de PR doivent suivre le format :
+
+```
+<type>(<scope>): <description>
+
+Types valides : feat | fix | docs | style | refactor | test | chore | perf | ci | build | revert
+```
+
+Exemples :
+```
+feat: add print preview mode
+fix(pdf): correct grid alignment on A4
+chore: update jspdf to v4.3
+docs: add offline usage instructions
+test: add edge cases for difficulty 10
+```
+
+### Protection de branche (a configurer manuellement sur GitHub)
+
+Activer dans **Settings → Branches → Branch protection rules** pour `main` :
+
+- [x] Require a pull request before merging
+- [x] Require status checks to pass (ci / Lint · Test · Build)
+- [x] Do not allow bypassing the above settings
+- [x] Restrict who can push to matching branches
+
+---
+
+## Ameliorations proposees
+
+### Priorite haute
+- [ ] Mode impression direct (Ctrl+P) avec CSS `@media print` en plus du PDF
+- [ ] Validation unicite de la solution (actuellement les cellules sont retirees sans verifier l'unicite)
+- [ ] Worker thread pour la generation de nombreuses grilles (eviter le blocage de l'UI)
+
+### Priorite moyenne
+- [ ] Grilles jouables interactivement dans le navigateur
+- [ ] Mode sombre / clair
+- [ ] Export PNG par grille
+- [ ] Historique des generations (localStorage)
+
+### Nice to have
+- [ ] i18n (EN, DE, ES)
+- [ ] QR code imprime sur chaque grille (lien vers la solution en ligne)
+- [ ] Personnalisation police et couleur du PDF
