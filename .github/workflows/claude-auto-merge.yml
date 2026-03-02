@@ -1,0 +1,40 @@
+name: Claude Auto-merge
+
+# Auto-approve and enable squash-merge for PRs originating from claude/* branches.
+#
+# How it works:
+#   1. Triggered when a PR is opened/updated from a claude/* branch.
+#   2. Approves the PR using GITHUB_TOKEN (requires "Allow GitHub Actions to
+#      create and approve pull requests" enabled in Settings → Actions → General).
+#   3. Enables auto-merge (squash) — the actual merge fires automatically once
+#      all required status checks (ci.yml: "Lint · Test · Build") are green.
+#
+# GitHub requirement:
+#   Enable auto-merge on the repository:
+#     Settings → General → Pull Requests → Allow auto-merge → ✓
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Auto-approve and merge Claude PRs
+    runs-on: ubuntu-latest
+    # Only act on branches created by Claude Code (prefix: claude/)
+    if: startsWith(github.head_ref, 'claude/')
+
+    steps:
+      - name: Approve PR
+        run: gh pr review --approve "${{ github.event.pull_request.html_url }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge (squash)
+        run: gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

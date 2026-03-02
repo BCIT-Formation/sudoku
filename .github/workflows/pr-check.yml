@@ -49,11 +49,13 @@ jobs:
             exit 1
           fi
 
-  # Ensure CI job name matches what you add to branch protection rules
-  ci-required:
-    name: CI must pass
+  # Sentinel job consumed by branch protection rules.
+  # Branch protection must also list "Lint · Test · Build" (from ci.yml) as a
+  # required status check — this job only confirms the title check passed.
+  pr-checks-passed:
+    name: PR checks passed
     runs-on: ubuntu-latest
     needs: conventional-title
     steps:
       - name: All PR checks passed
-        run: echo "PR checks passed."
+        run: echo "PR title is valid and all checks passed."

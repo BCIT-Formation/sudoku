@@ -58,7 +58,19 @@ This application is designed with security in mind:
 
 ---
 
+## Security Headers
+
+The following HTTP security headers are set on every response via `next.config.mjs`:
+
+| Header | Value |
+|---|---|
+| `Content-Security-Policy` | Restricts scripts, styles, frames, workers, and form targets to `'self'` |
+| `X-Frame-Options` | `DENY` — prevents clickjacking via iframes |
+| `X-Content-Type-Options` | `nosniff` — prevents MIME-type sniffing |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | Disables camera, microphone, geolocation, payment |
+
 ## Known Limitations
 
-- The application has no Content Security Policy (CSP) header configured — this is planned as a future improvement (see TODO.md)
-- No Subresource Integrity (SRI) hashes are configured for CDN assets (not applicable — no CDN is used)
+- `script-src 'unsafe-eval'` is present in the CSP because Next.js / Turbopack requires it in development. A stricter nonce-based CSP is a future improvement.
+- No Subresource Integrity (SRI) hashes are configured for CDN assets (not applicable — no CDN is used).

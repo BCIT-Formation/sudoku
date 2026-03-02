@@ -1,12 +1,15 @@
 # TODO — Generateur de Sudoku
 
-> Derniere mise a jour : 2026-02-26
+> Derniere mise a jour : 2026-03-02
 
 ---
 
 ## Critique — Bugs, securite, donnees manquantes
 
-- [ ] **Unicite de la solution non garantie** : l'algorithme retire des cellules aleatoirement sans verifier que la grille resultante a une solution unique. Un puzzle valide doit avoir exactement une solution. Implémenter une verificationpost-suppression via un second appel au solveur avec detection de solutions multiples.
+- [x] **Peer-dep React/react-dom** : conflit ERESOLVE sur Vercel — corrige en passant react + react-dom a `^19` (2026-03-02).
+- [x] **CSP manquante** : aucun header Content-Security-Policy — corrige via `next.config.mjs` (2026-03-02).
+- [x] **Bugs workflows CI/CD** : release.yml (PR URL mal formee), security.yml (job orphelin), pr-check.yml (sentinel job trompeur) — corriges (2026-03-02).
+- [ ] **Unicite de la solution non garantie** : l'algorithme retire des cellules aleatoirement sans verifier que la grille resultante a une solution unique. Un puzzle valide doit avoir exactement une solution. Implementer une verification post-suppression via un second appel au solveur avec detection de solutions multiples.
 - [ ] **Blocage de l'UI pour 50+ grilles** : la generation est synchrone sur le thread principal. Pour gridCount > ~20, l'interface se fige plusieurs secondes. Utiliser un Web Worker ou un generateur asynchrone par chunks.
 - [ ] **Aucun test de composant React** : `app/page.js` n'est pas couvert par les tests. Ajouter des tests de composant avec `@testing-library/react` si la couverture devient un critere CI bloquant.
 

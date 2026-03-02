@@ -90,34 +90,85 @@
 ## ADR-005 — Styling: Tailwind CSS (no component library)
 
 **Date**: 2026-02-26
-**Status**: Accepted
+**Updated**: 2026-03-02
+**Status**: Accepted (updated for Tailwind v4)
 
 **Context**: Need a styling solution that is fast to write and produces a small CSS bundle.
 
-**Decision**: Tailwind CSS v3 with PostCSS, no component library (no shadcn/ui, no MUI, no Radix).
+**Decision**: Tailwind CSS v4 with `@tailwindcss/postcss`, no component library.
 
 **Rationale**:
-- Minimal additional dependencies (just tailwindcss + postcss + autoprefixer)
+- Minimal additional dependencies — `autoprefixer` is now bundled inside Tailwind v4 (removed from devDependencies)
+- Content scanning is automatic in v4 (no `tailwind.config.mjs` needed for default setup)
 - Purges unused classes at build time → tiny CSS bundle
 - Avoids over-engineering a simple single-page application
+
+**Migration from v3 (2026-03-02)**:
+- `@tailwind base/components/utilities` → `@import "tailwindcss"` in globals.css
+- PostCSS plugin: `tailwindcss` → `@tailwindcss/postcss`
+- `tailwind.config.mjs`: deleted (v4 auto-detects source files; no custom theme to preserve)
+- `autoprefixer`: removed from devDependencies (bundled in Tailwind v4)
 
 ---
 
 ## ADR-006 — CI/CD: GitHub Actions with release-please
 
 **Date**: 2026-02-26
+**Updated**: 2026-03-02
 **Status**: Accepted
 
 **Context**: Need automated versioning, changelogs, and dependency updates.
 
 **Decision**:
 - `ci.yml`: Lint → Test → Build on every push and PR
-- `release.yml`: `release-please-action` creates release PRs and GitHub Releases automatically based on Conventional Commits
+- `release.yml`: `release-please-action@v4` creates release PRs and GitHub Releases automatically based on Conventional Commits; explicit `release-please-config.json` and `.release-please-manifest.json` added for deterministic behaviour
 - `security.yml`: Weekly `npm audit` + CodeQL scan
 - `pr-check.yml`: Shell-based Conventional Commits title validation (no external action)
-- `dependabot.yml`: Weekly npm dependency PRs, auto-merged for patch/minor updates
+- `dependabot-auto-merge.yml`: Auto-approve and squash-merge Dependabot patch/minor PRs
+- `claude-auto-merge.yml`: Auto-approve and squash-merge PRs from `claude/*` branches
+- `dependabot.yml`: Weekly npm + GitHub Actions PRs
 
 **Rationale**:
 - `release-please` handles CHANGELOG generation, version bumping, and tag creation automatically
 - Shell-based PR title check avoids a third-party action dependency
-- Auto-merge for Dependabot patch/minor keeps the repo up to date with minimal manual intervention
+- Auto-merge for Dependabot and Claude PRs keeps the repo up to date with zero manual intervention
+- Explicit release-please config files prevent ambiguity on first run
+
+**Bug fixes applied (2026-03-02)**:
+- `release.yml`: `release-please-action@v4` outputs `pr` as a JSON object, not a plain URL. Fixed auto-merge step to use `fromJSON(needs.release-please.outputs.pr).html_url`.
+- `security.yml`: Removed orphaned `dependabot-auto-merge` job — it was unreachable because the workflow is triggered only by `schedule`/`workflow_dispatch`, never by `pull_request`.
+- `pr-check.yml`: Renamed `ci-required` sentinel job to `pr-checks-passed` with a comment clarifying it does not verify the CI workflow (branch protection rules must list `Lint · Test · Build` separately).
+
+---
+
+## ADR-007 — ESLint pinned to ^9 (not ^10)
+
+**Date**: 2026-03-02
+**Status**: Accepted
+
+**Context**: ESLint 10.0.2 was released. `eslint-config-next@16` declares `peerDependencies: { eslint: ">=9.0.0" }` but the bundled plugins (notably the custom `eslint-config-next/parser`) do not yet implement `ScopeManager.addGlobals()`, a new API introduced in ESLint 10. This causes a `TypeError` on every lint run.
+
+**Decision**: Pin `eslint` to `^9` in `package.json` until the Next.js ESLint toolchain ships full ESLint 10 support.
+
+**Trade-offs**:
+- We miss ESLint 10 improvements (language plugins API), but all current rules work correctly.
+- This will be revisited when `eslint-config-next` releases ESLint 10-compatible plugins.
+
+---
+
+## ADR-008 — Upgrade to React 19 + Next.js 16
+
+**Date**: 2026-03-02
+**Status**: Accepted
+
+**Context**: Vercel CI failed with `ERESOLVE` — `react@"^18"` resolved to React 19.x (semver-compatible) but `react-dom@"^18"` required exactly React 18.3.x. Simultaneously, Dependabot had bumped Next.js to 16 and react-dom to 19.
+
+**Decision**: Align `react` and `react-dom` to `^19`, update Next.js to `^16.1.6`.
+
+**Rationale**:
+- Next.js 16 fully supports React 19 (official peer dependency).
+- Using explicit `^19` for both `react` and `react-dom` prevents the semver mismatch that caused the Vercel build failure.
+- Next.js 16 ships with Turbopack as the default build engine (replaces Webpack in development and production).
+
+**Trade-offs**:
+- React 19 is a major release; some third-party component libraries may not yet be compatible. This project has no such dependencies, so the risk is zero.

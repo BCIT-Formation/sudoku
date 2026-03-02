@@ -25,25 +25,29 @@ Fonctionne **entierement dans le navigateur** — aucune connexion internet requ
 
 ```
 sudoku/
-├── app/                   # Next.js App Router
-│   ├── layout.js          # Metadata, import CSS global
-│   ├── page.js            # UI principale (client component)
-│   └── globals.css        # Tailwind + styles slider custom
+├── app/                        # Next.js App Router
+│   ├── layout.js               # Metadata, import CSS global
+│   ├── page.js                 # UI principale (client component)
+│   └── globals.css             # Tailwind v4 + styles slider custom
 ├── lib/
-│   └── sudoku.js          # Algorithme generateur + rendu PDF
+│   └── sudoku.js               # Algorithme generateur + rendu PDF
 ├── tests/
-│   └── sudoku.test.js     # Tests unitaires (node:test natif)
+│   └── sudoku.test.js          # Tests unitaires (node:test natif)
 ├── .github/
-│   ├── dependabot.yml     # Mises a jour auto des dependances
+│   ├── CODEOWNERS              # Proprietaires du code
+│   ├── dependabot.yml          # Mises a jour auto des dependances
 │   └── workflows/
-│       ├── ci.yml         # Lint → Test → Build sur chaque push/PR
-│       ├── release.yml    # Release automatique via release-please
-│       ├── pr-check.yml   # Validation titre PR (Conventional Commits)
-│       └── security.yml   # npm audit + CodeQL (hebdomadaire)
-├── jsconfig.json          # Alias de chemins (@/*)
-├── next.config.mjs        # Configuration Next.js
-├── tailwind.config.mjs    # Configuration Tailwind CSS
-└── postcss.config.mjs     # Configuration PostCSS
+│       ├── ci.yml              # Lint → Test → Build sur chaque push/PR
+│       ├── release.yml         # Release automatique via release-please
+│       ├── pr-check.yml        # Validation titre PR (Conventional Commits)
+│       ├── security.yml        # npm audit + CodeQL (hebdomadaire)
+│       ├── claude-auto-merge.yml  # Auto-approve/merge des PRs Claude
+│       └── dependabot-auto-merge.yml  # Auto-merge des PRs Dependabot
+├── release-please-config.json  # Configuration release-please
+├── .release-please-manifest.json  # Version actuelle trackee par release-please
+├── jsconfig.json               # Alias de chemins (@/*)
+├── next.config.mjs             # Configuration Next.js + headers HTTP securite
+└── postcss.config.mjs          # Configuration PostCSS (@tailwindcss/postcss)
 ```
 
 ### Algorithme Sudoku (lib/sudoku.js)
@@ -66,7 +70,7 @@ sudoku/
 
 ## Prerequis
 
-- **Node.js** 20 ou superieur
+- **Node.js** 20 ou superieur (22 recommande)
 - **npm** 10 ou superieur
 
 ---
@@ -183,9 +187,24 @@ test: add edge cases for difficulty 10
 Activer dans **Settings → Branches → Branch protection rules** pour `main` :
 
 - [x] Require a pull request before merging
-- [x] Require status checks to pass (ci / Lint · Test · Build)
+- [x] Require status checks to pass : `Lint · Test · Build` (ci.yml) + `PR checks passed` (pr-check.yml)
 - [x] Do not allow bypassing the above settings
 - [x] Restrict who can push to matching branches
+
+### Auto-merge (PRs Claude et Dependabot)
+
+Activer dans **Settings → General → Pull Requests** :
+
+- [x] Allow auto-merge
+- [x] Allow squash merging (par defaut)
+
+Activer dans **Settings → Actions → General** :
+
+- [x] Allow GitHub Actions to create and approve pull requests
+
+Une fois ces reglages actifs :
+- Les PRs des branches `claude/*` sont auto-approuvees et mergees des que la CI est verte.
+- Les PRs Dependabot (patch/minor) sont auto-approuvees et mergees automatiquement.
 
 ---
 

@@ -58,23 +58,8 @@ jobs:
         with:
           category: "/language:javascript-typescript"
 
-  # Auto-merge Dependabot patch/minor PRs once CI is green
-  dependabot-auto-merge:
-    name: Dependabot auto-merge
-    runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
-
-    permissions:
-      contents: write
-      pull-requests: write
-
-    steps:
-      - name: Approve PR
-        run: gh pr review --approve "${{ github.event.pull_request.html_url }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Enable auto-merge (squash)
-        run: gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Note: Dependabot auto-merge is handled by dependabot-auto-merge.yml
+  # (triggered on pull_request events). A job here would never run because
+  # this workflow is triggered only by schedule and workflow_dispatch — at
+  # which point github.actor is 'github-actions[bot]', not 'dependabot[bot]',
+  # and github.event.pull_request is empty.
