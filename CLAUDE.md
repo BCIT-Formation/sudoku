@@ -1,7 +1,7 @@
 # CLAUDE.md — AI Assistant Guide for sudoku-generator
 
-> Last updated: 2026-03-02
-> Stack: Next.js 16 · React 19 · Tailwind CSS v4 · jsPDF 4 · Node.js 20+
+> Last updated: 2026-03-03
+> Stack: Next.js 16 · React 19 · Tailwind CSS v4 · jsPDF 4 · Node.js 20+ · Docker
 
 This file is the single authoritative reference for AI assistants working on this
 repository. Read it fully before making any changes.
@@ -26,6 +26,11 @@ No backend, no database, no external API calls — everything runs in the browse
 
 ```
 sudoku/
+├── Dockerfile                       # Multi-stage Docker build (deps → builder → runner)
+├── docker-compose.yml               # Production compose (docker compose up)
+├── setup.sh                         # One-command setup script (chmod +x ./setup.sh)
+├── public/                          # Static assets served by Next.js (currently empty)
+│   └── .gitkeep                     # Keeps the dir tracked — required by Docker COPY
 ├── app/                             # Next.js App Router
 │   ├── layout.js                    # HTML shell, metadata, global CSS import
 │   ├── page.js                      # Entire UI — 'use client', all state lives here
@@ -385,3 +390,94 @@ See `DECISIONS.md` for the full ADR log. Key decisions:
 | ADR-006 | GitHub Actions + release-please (CI/CD, auto-versioning) |
 | ADR-007 | ESLint pinned to ^9 (^10 incompatible with eslint-config-next) |
 | ADR-008 | React 19 + Next.js 16 (fixed Vercel peer-dep failure) |
+
+---
+
+## 17. Docker
+
+### How the build works
+
+The project uses a **three-stage** Docker build to keep the final image small:
+
+| Stage | Base | Purpose |
+|---|---|---|
+| `deps` | `node:20-alpine` | `npm ci` — layer cached until lockfile changes |
+| `builder` | `node:20-alpine` | `next build` — produces `.next/standalone/` |
+| `runner` | `node:20-alpine` | Copies only the standalone output; runs as `nextjs` (non-root) |
+
+`next.config.mjs` must contain `output: 'standalone'` — this is already set.
+The standalone build produces `server.js` + a minimal `node_modules` subset;
+the full 200+ MB dev node_modules are not copied into the runtime image.
+
+### Runtime directory layout (inside container)
+
+```
+/app/                     ← WORKDIR
+├── server.js             ← Next.js standalone entry point
+├── node_modules/         ← minimal subset (~25 MB) from standalone build
+├── public/               ← static public assets (currently empty)
+└── .next/
+    └── static/           ← compiled JS/CSS chunks
+```
+
+### Commands
+
+```bash
+# Build image
+docker build -t sudoku-generator .
+
+# Run
+docker run -p 3000:3000 sudoku-generator
+# → http://localhost:3000
+
+# With compose
+docker compose up --build    # build + start
+docker compose up -d         # background
+docker compose down          # stop + remove
+docker compose logs -f       # follow logs
+```
+
+### Health check
+
+The Dockerfile includes a `HEALTHCHECK` that polls `http://localhost:3000/` via
+a Node.js one-liner — no extra tools (curl/wget) are installed in the Alpine image.
+
+### Key files
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Multi-stage build definition |
+| `.dockerignore` | Excludes `node_modules/`, `.next/`, `.env*`, `.git/`, `*.md` from build context |
+| `docker-compose.yml` | Production compose with `restart: unless-stopped` |
+| `public/.gitkeep` | Keeps `public/` tracked by git — Docker COPY requires the directory to exist |
+
+### What NOT to do with Docker
+
+- Do not add secrets to `docker-compose.yml` — use `.env` files mounted at runtime or Docker secrets
+- Do not commit `.env` files — `.dockerignore` already excludes them
+- Do not remove `output: 'standalone'` from `next.config.mjs` — the runner stage depends on it
+- Do not change the `USER nextjs` line — running as root in containers is a security risk
+
+---
+
+## 18. setup.sh
+
+A single script that prepares the project for development or deployment.
+
+```bash
+./setup.sh              # install deps + lint + test + build  (mirrors CI)
+./setup.sh --docker     # same + build Docker image
+./setup.sh --skip-ci    # install deps only
+./setup.sh --help       # usage reference
+```
+
+**What it does:**
+1. Checks Node.js >= 20 and npm >= 10 (exits with error if not met)
+2. Checks Docker daemon is running (only with `--docker`)
+3. Runs `npm install`
+4. Runs the full CI pipeline: `npm run lint && npm test && npm run build`
+5. Optionally runs `docker build -t sudoku-generator:latest .`
+6. Prints a summary of useful commands
+
+**The script is idempotent** — safe to run multiple times without side effects.
+Colors are disabled automatically when stdout is not a TTY (safe in CI logs).

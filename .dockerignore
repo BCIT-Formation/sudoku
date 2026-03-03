@@ -1,0 +1,41 @@
+# ── Build artifacts ────────────────────────────────────────────────────────────
+.next/
+out/
+
+# ── Dependencies (reinstalled inside Docker via npm ci) ────────────────────────
+node_modules/
+
+# ── Git ────────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Secrets — never copy these into the image ──────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Development / editor noise ─────────────────────────────────────────────────
+npm-debug.log*
+*.local
+coverage/
+.nyc_output/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Docker tooling itself (not needed inside the build context) ─────────────────
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# ── CI / project meta (not needed at runtime) ──────────────────────────────────
+setup.sh
+*.md
+.github/
+release-please-config.json
+.release-please-manifest.json
+jsconfig.json
+CLAUDE.md

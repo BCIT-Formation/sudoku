@@ -40,6 +40,10 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Standalone output bundles only the minimal Node.js files needed to run the
+  // production server — required for the Docker multi-stage build.
+  // The .next/standalone/ directory contains server.js + node_modules subset.
+  output: 'standalone',
   async headers() {
     return [
       {

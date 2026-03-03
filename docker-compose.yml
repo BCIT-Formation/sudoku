@@ -1,0 +1,22 @@
+# docker-compose.yml — Production deployment for sudoku-generator
+#
+# Quick start:
+#   docker compose up --build    # Build image + start container
+#   docker compose up -d         # Start in detached (background) mode
+#   docker compose down          # Stop and remove the container
+#   docker compose logs -f       # Follow container logs
+#
+# The container exposes the app on http://localhost:3000.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sudoku-generator:latest
+    container_name: sudoku-generator
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
