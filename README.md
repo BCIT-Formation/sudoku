@@ -1,8 +1,8 @@
 # Generateur de Sudoku
 
-[![CI](https://github.com/BardinConsulting/sudoku/actions/workflows/ci.yml/badge.svg)](https://github.com/BardinConsulting/sudoku/actions/workflows/ci.yml)
-[![Release](https://github.com/BardinConsulting/sudoku/actions/workflows/release.yml/badge.svg)](https://github.com/BardinConsulting/sudoku/actions/workflows/release.yml)
-[![Security](https://github.com/BardinConsulting/sudoku/actions/workflows/security.yml/badge.svg)](https://github.com/BardinConsulting/sudoku/actions/workflows/security.yml)
+[![CI](https://github.com/BCIT-Formation/sudoku/actions/workflows/ci.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/ci.yml)
+[![Release](https://github.com/BCIT-Formation/sudoku/actions/workflows/release.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/release.yml)
+[![Security](https://github.com/BCIT-Formation/sudoku/actions/workflows/security.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/security.yml)
 
 Application web de generation de grilles de sudoku, exportables en PDF pour impression.
 Fonctionne **entierement dans le navigateur** — aucune connexion internet requise apres le premier chargement.
@@ -11,11 +11,14 @@ Fonctionne **entierement dans le navigateur** — aucune connexion internet requ
 
 ## Fonctionnalites
 
-- **Generation aleatoire** de 1 a 99 grilles par lot
+- **Generation aleatoire** de 1 a 99 grilles par lot, asynchrone (l'UI ne se fige pas)
+- **Solution unique garantie** : chaque cellule retiree est validee par un second passage du solveur
+- **Seed optionnel** : le meme seed regenere exactement les memes grilles
 - **Difficulte reglable** de 1 (Tres facile) a 10 (Expert)
 - **Export PDF** A4 — 2 grilles par page, mise en page optimisee pour l'impression
 - **Solutions optionnelles** en fin de PDF (4 par page)
 - **Apercu en direct** des 20 premieres grilles dans le navigateur
+- **Impression native** : CSS `@media print` pour imprimer l'apercu via Ctrl+P, en complement du PDF
 - **100 % client-side** — Next.js + React, aucun appel serveur, aucune donnee utilisateur collectee
 - **PDF genere localement** via jsPDF (charge dynamiquement uniquement au clic)
 
@@ -28,9 +31,12 @@ sudoku/
 ├── app/                        # Next.js App Router
 │   ├── layout.js               # Metadata, import CSS global
 │   ├── page.js                 # UI principale (client component)
-│   └── globals.css             # Tailwind v4 + styles slider custom
+│   ├── globals.css             # Tailwind v4 + slider custom + CSS impression
+│   └── hooks/
+│       └── useGridGenerator.js # Hook de generation asynchrone par chunks
 ├── lib/
-│   └── sudoku.js               # Algorithme generateur + rendu PDF
+│   ├── sudoku.js               # Algorithme generateur + rendu PDF
+│   └── i18n.js                 # Catalogue de chaines (structure i18n minimale)
 ├── tests/
 │   └── sudoku.test.js          # Tests unitaires (node:test natif)
 ├── .github/
@@ -47,17 +53,21 @@ sudoku/
 ├── .release-please-manifest.json  # Version actuelle trackee par release-please
 ├── jsconfig.json               # Alias de chemins (@/*)
 ├── next.config.mjs             # Configuration Next.js + headers HTTP securite
-└── postcss.config.mjs          # Configuration PostCSS (@tailwindcss/postcss)
+├── postcss.config.mjs          # Configuration PostCSS (@tailwindcss/postcss)
+├── Dockerfile                  # Build Docker multi-stage (deps → builder → runner)
+├── docker-compose.yml          # Compose de production
+└── setup.sh                    # Installation + lint + test + build en une commande
 ```
 
 ### Algorithme Sudoku (lib/sudoku.js)
 
 | Fonction | Role |
 |---|---|
-| `shuffle(arr)` | Fisher-Yates — melange aleatoire |
+| `shuffle(arr, rng?)` | Fisher-Yates — melange aleatoire |
 | `isValid(board, r, c, n)` | Verifie contraintes ligne/colonne/boite |
-| `solve(board, shuffle?)` | Backtracking recursif (shuffle=true → generation aleatoire) |
-| `generateSudoku(difficulty)` | Genere un puzzle + sa solution |
+| `solve(board, shuffle?, budget?, rng?)` | Backtracking recursif (shuffle=true → generation aleatoire) |
+| `countSolutions(board, limit?, budget?)` | Compte les solutions avec arret anticipe a `limit` |
+| `generateSudoku(difficulty, seed?)` | Genere un puzzle a solution unique + sa solution |
 | `getDifficultyLabel(d)` | Label lisible par l'humain |
 | `drawGridOnPDF(doc, board, x, y, size)` | Dessin jsPDF d'une grille |
 
@@ -65,6 +75,10 @@ sudoku/
 - Difficulte 1 → 25 retirees (56 indices) — Tres facile
 - Difficulte 5 → 40 retirees (41 indices) — Moyen
 - Difficulte 10 → 58 retirees (23 indices) — Expert
+
+Chaque suppression est validee par `countSolutions` : une cellule n'est retiree
+que si la grille conserve exactement une solution. Aux difficultes elevees, le
+nombre de cellules retirees est donc un objectif au mieux, jamais garanti.
 
 ---
 
@@ -79,7 +93,7 @@ sudoku/
 
 ```bash
 # Cloner le depot
-git clone https://github.com/BardinConsulting/sudoku.git
+git clone https://github.com/BCIT-Formation/sudoku.git
 cd sudoku
 
 # Installer les dependances
@@ -109,9 +123,10 @@ Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
 
 1. Choisir la **difficulte** (curseur 1-10)
 2. Definir le **nombre de grilles** (1 a 99, via le champ ou les boutons +/-)
-3. Cocher **Inclure les solutions** si souhaite
-4. Cliquer **Generer** — apercu immediat dans le navigateur
-5. Cliquer **Exporter en PDF** — telechargement du fichier `sudoku-N-grilles-diffX.pdf`
+3. Saisir un **seed** (optionnel) pour pouvoir regenerer les memes grilles a l'identique
+4. Cocher **Inclure les solutions** si souhaite
+5. Cliquer **Generer** — apercu immediat dans le navigateur
+6. Cliquer **Exporter en PDF** — telechargement du fichier `sudoku-N-grilles-diffX.pdf`
 
 ### Utilisation hors-ligne
 
@@ -143,7 +158,7 @@ npm i -g vercel
 vercel
 
 # Option 2 : via Git
-# Connecter le repo BardinConsulting/sudoku a vercel.com
+# Connecter le repo BCIT-Formation/sudoku a vercel.com
 # Framework detecte automatiquement : Next.js
 # Build command : npm run build
 # Output directory : .next
@@ -210,10 +225,12 @@ Une fois ces reglages actifs :
 
 ## Ameliorations proposees
 
+Le backlog complet et son etat d'avancement sont tenus a jour dans [TODO.md](TODO.md).
+Principaux items ouverts :
+
 ### Priorite haute
-- [ ] Mode impression direct (Ctrl+P) avec CSS `@media print` en plus du PDF
-- [ ] Validation unicite de la solution (actuellement les cellules sont retirees sans verifier l'unicite)
-- [ ] Worker thread pour la generation de nombreuses grilles (eviter le blocage de l'UI)
+- [ ] Tests de composant React pour `app/page.js` (`@testing-library/react`)
+- [ ] Scores de difficulte qualitatifs (singletons, paires nues) en plus du nombre de cellules retirees
 
 ### Priorite moyenne
 - [ ] Grilles jouables interactivement dans le navigateur
@@ -222,6 +239,7 @@ Une fois ces reglages actifs :
 - [ ] Historique des generations (localStorage)
 
 ### Nice to have
-- [ ] i18n (EN, DE, ES)
-- [ ] QR code imprime sur chaque grille (lien vers la solution en ligne)
-- [ ] Personnalisation police et couleur du PDF
+- [ ] Traductions supplementaires (EN, DE, ES) via la structure `lib/i18n.js` existante
+- [ ] QR code imprime sur chaque grille (encodant la solution)
+- [ ] Personnalisation police, couleur et format papier du PDF
+- [ ] Progressive Web App (manifest + Service Worker)
