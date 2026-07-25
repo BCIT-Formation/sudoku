@@ -354,25 +354,9 @@ This project deliberately minimises dependencies. Before adding any package:
 
 ---
 
-## 15. Open TODO items (as of 2026-03-02)
+## 15. Open TODO items
 
-### Critical (must fix before v1.0)
-- **Puzzle uniqueness**: `generateSudoku` removes cells without checking for a unique solution. Fix: run `solve()` a second time on the puzzle and detect multiple solutions.
-- **UI thread blocking**: generation is synchronous. For 50+ grids, the page freezes. Fix: Web Worker or async chunked generation.
-- **No React component tests**: `app/page.js` is untested. Add `@testing-library/react` if coverage becomes a CI gate.
-
-### Important
-- Accessibility (ARIA roles on grid cells)
-- Native print CSS (`@media print` in `globals.css`)
-- Separate business logic from UI into a `useGridGenerator` custom hook
-- Solver timeout guard (max iterations)
-
-### Nice to have
-- Interactive playable grid in the browser
-- PNG export per grid
-- Generation seed for reproducible grids
-- PWA manifest + Service Worker
-- Dark/light theme toggle
+See `TODO.md` for the current prioritised backlog (critical / important / nice-to-have).
 
 ---
 
@@ -481,3 +465,51 @@ A single script that prepares the project for development or deployment.
 
 **The script is idempotent** — safe to run multiple times without side effects.
 Colors are disabled automatically when stdout is not a TTY (safe in CI logs).
+
+---
+
+## Shared conventions (BCIT-Formation)
+
+These rules apply to every BCIT-Formation repository. The canonical version lives in
+[claude-skills-bcit/CONVENTIONS.md](https://github.com/BCIT-Formation/claude-skills-bcit/blob/main/CONVENTIONS.md).
+Repo-specific sections in this file may add stricter rules, never weaker ones.
+
+### Git
+- Never commit directly to the default branch; one branch per task, delivered as a PR.
+- Branch naming: `claude/<short-topic>` for AI-agent work, `feat/<topic>` or `fix/<topic>` otherwise.
+- Conventional Commits: `type(scope): imperative lowercase subject` (72 chars max).
+  Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- Never force-push shared branches; never bypass hooks (`--no-verify`). Stage specific files rather than a blanket `git add -A`.
+- Squash-merge by default.
+
+### Security (non-negotiable)
+- Never commit secrets, tokens, API keys, or personal data. Secrets live in `.env` (gitignored); commit `.env.example` with placeholders only.
+- Validate and sanitize all external input. SQL only through parameterized queries, never string concatenation.
+- No sensitive data in logs; use placeholders like `[REDACTED]`.
+- Least privilege everywhere; HTTPS for all network calls.
+
+### Dependencies
+- Keep dependencies minimal; prefer the standard library and dependencies already present.
+- A new production dependency needs a clear justification recorded in `DECISIONS.md` (or `docs/ADR.md`).
+
+### Code quality
+- Match the surrounding code style; produce the smallest diff that solves the problem (KISS, DRY, YAGNI).
+- Comments explain WHY, not WHAT.
+- Never merge TODO/FIXME markers, temporary mocks, or incomplete implementations to the default branch.
+
+### Testing
+- Every bug fix gets a regression test; write the failing test first.
+- New or changed logic gets matching tests. Run this repo's documented lint/test commands before committing.
+
+### Documentation
+- CLAUDE.md contains durable instructions only: no status reports, changelogs, or task lists (those live in `TODO.md` / `CHANGELOG.md`), and no session-specific branch names or URLs.
+- Record architecture decisions in `DECISIONS.md` / `docs/ADR.md`; read it before changing fundamentals, and do not re-fix items already resolved there.
+- If documentation contradicts the code or itself, flag the inconsistency instead of silently picking a side.
+
+### Language
+- Team language is French: user-facing content and business documents are written in French.
+- Code identifiers are in English. For docs, comments, and commits, match the repo's existing language.
+
+### AI assistant behavior
+- Never invent APIs, endpoints, data models, metrics, or quotes. If required business information is missing, stop and ask one precise question.
+- Ask before: deleting files, major refactors, changing dependencies, or any force-push.
