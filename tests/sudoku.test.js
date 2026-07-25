@@ -10,6 +10,8 @@ import {
   generateSudoku,
   getDifficultyLabel,
   countSolutions,
+  analyzePuzzle,
+  ratePuzzle,
   MAX_SOLVER_ITERATIONS,
 } from '../lib/sudoku.js';
 
@@ -226,6 +228,57 @@ describe('solver iteration guard', () => {
   test('normal generation completes well within the budget', () => {
     // Would throw 'solver iteration budget exhausted' if the guard tripped
     assert.doesNotThrow(() => generateSudoku(10));
+  });
+});
+
+// ─── Difficulty heuristic ─────────────────────────────────────────────────────
+
+describe('difficulty heuristic', () => {
+  test('analyzePuzzle solves a single missing cell via a naked single', () => {
+    const { solution } = generateSudoku(1, 'heuristic-test');
+    const puzzle = solution.map((row) => [...row]);
+    puzzle[4][4] = 0;
+
+    const report = analyzePuzzle(puzzle);
+    assert.strictEqual(report.solvedByLogic, true);
+    assert.strictEqual(report.nakedSingles, 1);
+    assert.strictEqual(report.hiddenSingles, 0);
+  });
+
+  test('analyzePuzzle does not mutate the input puzzle', () => {
+    const { puzzle } = generateSudoku(5, 'heuristic-mutate');
+    const snapshot = JSON.stringify(puzzle);
+    analyzePuzzle(puzzle);
+    assert.strictEqual(JSON.stringify(puzzle), snapshot);
+  });
+
+  test('ratePuzzle returns an integer between 1 and 10', () => {
+    for (const d of [1, 5, 10]) {
+      const rating = ratePuzzle(generateSudoku(d).puzzle);
+      assert.ok(Number.isInteger(rating), `rating ${rating} should be an integer`);
+      assert.ok(rating >= 1 && rating <= 10, `rating ${rating} out of range`);
+    }
+  });
+
+  test('easy puzzles rate easy, expert puzzles rate hard', () => {
+    assert.ok(ratePuzzle(generateSudoku(1).puzzle) <= 4);
+    assert.ok(ratePuzzle(generateSudoku(10).puzzle) >= 6);
+  });
+
+  test('generateSudoku attaches the qualitative rating to its result', () => {
+    const result = generateSudoku(5);
+    assert.ok(Number.isInteger(result.rating));
+    assert.ok(result.rating >= 1 && result.rating <= 10);
+  });
+
+  test('felt rating stays close to the requested difficulty', () => {
+    for (const d of [1, 5, 10]) {
+      const { rating } = generateSudoku(d);
+      assert.ok(
+        Math.abs(rating - d) <= 3,
+        `difficulty ${d} produced a rating of ${rating}`
+      );
+    }
   });
 });
 

@@ -1,0 +1,25 @@
+{
+  "name": "Generateur de Sudoku",
+  "short_name": "Sudoku",
+  "description": "Generez et exportez des grilles de sudoku en PDF. Fonctionne entierement dans le navigateur, sans connexion internet.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e1b4b",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

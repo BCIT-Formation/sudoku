@@ -19,7 +19,8 @@ const securityHeaders = [
   // Content Security Policy
   // - script-src 'unsafe-eval': required by Next.js / Turbopack in development.
   // - style-src 'unsafe-inline': required by Tailwind CSS (injects <style> tags).
-  // - worker-src blob:: jsPDF may spin up a Blob-URL worker for PDF rendering.
+  // - worker-src 'self' blob:: 'self' for the PWA service worker (/sw.js);
+  //   blob: because jsPDF may spin up a Blob-URL worker for PDF rendering.
   // - img-src data: blob:: jsPDF embeds images as data URIs; blob: for canvas.
   {
     key: 'Content-Security-Policy',
@@ -29,7 +30,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "worker-src blob:",
+      "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
