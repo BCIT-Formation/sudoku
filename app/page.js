@@ -127,6 +127,9 @@ export default function Home() {
     setExportProgress(t('export.loadingLib'));
 
     try {
+      // Deliberate lazy import (ADR-002): jsPDF weighs ~500 kB, so it is only
+      // fetched on first export to keep the initial bundle small. Do not hoist
+      // this to a top-level import.
       const { jsPDF } = await import('jspdf');
 
       setExportProgress(t('export.generatingPages'));
