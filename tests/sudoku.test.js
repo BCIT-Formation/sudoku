@@ -6,7 +6,12 @@
 
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateSudoku, getDifficultyLabel } from '../lib/sudoku.js';
+import {
+  generateSudoku,
+  getDifficultyLabel,
+  countSolutions,
+  MAX_SOLVER_ITERATIONS,
+} from '../lib/sudoku.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -99,10 +104,11 @@ describe('generateSudoku', () => {
     assert.ok(empty >= 22 && empty <= 28, `Expected ~25 empty for diff 1, got ${empty}`);
   });
 
-  test('difficulty 10 removes approximately 58 cells (±3)', () => {
+  test('difficulty 10 removes up to ~58 cells while staying uniquely solvable', () => {
     const { puzzle } = generateSudoku(10);
     const empty = countEmpty(puzzle);
-    assert.ok(empty >= 55 && empty <= 61, `Expected ~58 empty for diff 10, got ${empty}`);
+    // 58 is the target upper bound; uniqueness checking may keep a few extra clues
+    assert.ok(empty >= 48 && empty <= 58, `Expected 48-58 empty for diff 10, got ${empty}`);
   });
 
   test('all cell values in puzzle are integers between 0 and 9', () => {
@@ -126,6 +132,100 @@ describe('generateSudoku', () => {
     const b = generateSudoku(5);
     const same = a.puzzle.flat().every((v, i) => v === b.puzzle.flat()[i]);
     assert.ok(!same, 'Two calls should produce different puzzles (randomised)');
+  });
+
+  test('puzzle has exactly one solution', () => {
+    [1, 5, 10].forEach((d) => {
+      const { puzzle } = generateSudoku(d);
+      const copy = puzzle.map((row) => [...row]);
+      assert.strictEqual(
+        countSolutions(copy, 2),
+        1,
+        `Puzzle at difficulty ${d} must have exactly one solution`
+      );
+    });
+  });
+});
+
+// ─── countSolutions ───────────────────────────────────────────────────────────
+
+describe('countSolutions', () => {
+  test('a solved board has exactly one solution', () => {
+    const { solution } = generateSudoku(5);
+    assert.strictEqual(countSolutions(solution.map((r) => [...r]), 2), 1);
+  });
+
+  test('an empty board has multiple solutions (early exit at limit)', () => {
+    const empty = Array.from({ length: 9 }, () => new Array(9).fill(0));
+    assert.strictEqual(countSolutions(empty, 2), 2);
+  });
+
+  test('an unsolvable board has zero solutions', () => {
+    const board = Array.from({ length: 9 }, () => new Array(9).fill(0));
+    // Row 0 holds 1-8; the 9 in the same column blocks the last cell entirely
+    board[0] = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+    board[1][8] = 9;
+    assert.strictEqual(countSolutions(board, 2), 0);
+  });
+
+  test('does not mutate the input board', () => {
+    const { puzzle } = generateSudoku(5);
+    const copy = puzzle.map((row) => [...row]);
+    countSolutions(puzzle, 2);
+    assert.deepStrictEqual(puzzle, copy, 'countSolutions must leave the board unchanged');
+  });
+
+  test('respects the iteration budget on an empty board', () => {
+    const empty = Array.from({ length: 9 }, () => new Array(9).fill(0));
+    const budget = { iterations: 0, max: 10, exceeded: false };
+    countSolutions(empty, 1000, budget);
+    assert.ok(budget.exceeded, 'Tiny budget must be marked exceeded');
+    assert.ok(budget.iterations <= 11, 'Search must stop right after the budget is exhausted');
+  });
+});
+
+// ─── seeded generation ────────────────────────────────────────────────────────
+
+describe('generateSudoku with seed', () => {
+  test('same seed produces identical puzzle and solution', () => {
+    const a = generateSudoku(6, 'classroom-42');
+    const b = generateSudoku(6, 'classroom-42');
+    assert.deepStrictEqual(a.puzzle, b.puzzle);
+    assert.deepStrictEqual(a.solution, b.solution);
+  });
+
+  test('different seeds produce different puzzles', () => {
+    const a = generateSudoku(6, 'seed-a');
+    const b = generateSudoku(6, 'seed-b');
+    const same = a.puzzle.flat().every((v, i) => v === b.puzzle.flat()[i]);
+    assert.ok(!same, 'Different seeds should produce different puzzles');
+  });
+
+  test('numeric seeds are accepted', () => {
+    const a = generateSudoku(4, 12345);
+    const b = generateSudoku(4, 12345);
+    assert.deepStrictEqual(a.puzzle, b.puzzle);
+  });
+
+  test('empty-string seed falls back to random generation', () => {
+    const a = generateSudoku(5, '');
+    const b = generateSudoku(5, '');
+    const same = a.puzzle.flat().every((v, i) => v === b.puzzle.flat()[i]);
+    assert.ok(!same, 'Empty seed must not be treated as a fixed seed');
+  });
+});
+
+// ─── solver guard ─────────────────────────────────────────────────────────────
+
+describe('solver iteration guard', () => {
+  test('MAX_SOLVER_ITERATIONS is a sane positive integer', () => {
+    assert.ok(Number.isInteger(MAX_SOLVER_ITERATIONS));
+    assert.ok(MAX_SOLVER_ITERATIONS > 1000);
+  });
+
+  test('normal generation completes well within the budget', () => {
+    // Would throw 'solver iteration budget exhausted' if the guard tripped
+    assert.doesNotThrow(() => generateSudoku(10));
   });
 });
 
