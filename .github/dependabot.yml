@@ -1,39 +1,38 @@
 version: 2
-
 updates:
-  # npm dependencies
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Europe/Paris"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "chore"
-      prefix-development: "chore"
-      include: "scope"
-    labels:
-      - "dependencies"
-    groups:
-      # Group all non-breaking updates together for a single PR
-      patch-and-minor:
-        update-types:
-          - "minor"
-          - "patch"
-
-  # GitHub Actions versions
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Europe/Paris"
-    commit-message:
-      prefix: "ci"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
+- package-ecosystem: npm
+  directory: /
+  schedule:
+    interval: weekly
+    day: monday
+    time: 09:00
+    timezone: Europe/Paris
+  open-pull-requests-limit: 5
+  commit-message:
+    prefix: chore
+    prefix-development: chore
+    include: scope
+  labels:
+  - dependencies
+  groups:
+    patch-and-minor:
+      update-types:
+      - minor
+      - patch
+- package-ecosystem: github-actions
+  directory: /
+  schedule:
+    interval: weekly
+    day: monday
+    time: 09:00
+    timezone: Europe/Paris
+  commit-message:
+    prefix: ci
+    include: scope
+  labels:
+  - dependencies
+  - github-actions
+  groups:
+    github-actions:
+      patterns:
+      - '*'
