@@ -46,6 +46,25 @@ input[type='range']::-moz-range-thumb {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
+/* ─── Playable grid cell input ─────────────────────────────────────────
+   Empty cells of the preview grids are editable. The input fills its
+   gridcell wrapper; colours (conflict red / entry indigo) come inline. */
+.cell-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  outline: none;
+  caret-color: #4f46e5;
+}
+
+.cell-input:focus {
+  box-shadow: inset 0 0 0 2px #6366f1;
+}
+
 /* ─── Native print mode ────────────────────────────────────────────────
    Complements the jsPDF export: Ctrl+P prints the previewed grids
    directly. Chrome/Firefox/Safari all honour these rules. */
@@ -74,5 +93,11 @@ input[type='range']::-moz-range-thumb {
   .print-area {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  /* Print user entries as plain cells (no focus ring, no tinted background) */
+  .cell-input {
+    background: #fff !important;
+    box-shadow: none !important;
   }
 }
