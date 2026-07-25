@@ -45,3 +45,34 @@ input[type='range']::-moz-range-thumb {
   border: 2px solid white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
+
+/* ─── Native print mode ────────────────────────────────────────────────
+   Complements the jsPDF export: Ctrl+P prints the previewed grids
+   directly. Chrome/Firefox/Safari all honour these rules. */
+@media print {
+  /* Hide everything that is not a sudoku grid */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Drop the dark gradient background (inline style needs !important) */
+  main {
+    background: #fff !important;
+    min-height: 0 !important;
+  }
+
+  /* One clean black-on-white card per grid, never split across pages */
+  .print-area .sudoku-card {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid; /* legacy alias for older engines */
+  }
+
+  /* Preserve the grid borders and cell shading when the browser
+     strips backgrounds by default */
+  .print-area {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
