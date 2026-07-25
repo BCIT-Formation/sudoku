@@ -1,5 +1,16 @@
 # Generateur de Sudoku
 
+<!-- workflow-badges:start -->
+
+[![CI](https://github.com/BCIT-Formation/sudoku/actions/workflows/ci.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/ci.yml)
+[![Claude Auto-merge](https://github.com/BCIT-Formation/sudoku/actions/workflows/claude-auto-merge.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/claude-auto-merge.yml)
+[![Dependabot auto-merge](https://github.com/BCIT-Formation/sudoku/actions/workflows/dependabot-auto-merge.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/dependabot-auto-merge.yml)
+[![PR Check](https://github.com/BCIT-Formation/sudoku/actions/workflows/pr-check.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/pr-check.yml)
+[![Release](https://github.com/BCIT-Formation/sudoku/actions/workflows/release.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/release.yml)
+[![Security](https://github.com/BCIT-Formation/sudoku/actions/workflows/security.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/security.yml)
+
+<!-- workflow-badges:end -->
+
 [![CI](https://github.com/BCIT-Formation/sudoku/actions/workflows/ci.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/ci.yml)
 [![Release](https://github.com/BCIT-Formation/sudoku/actions/workflows/release.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/release.yml)
 [![Security](https://github.com/BCIT-Formation/sudoku/actions/workflows/security.yml/badge.svg)](https://github.com/BCIT-Formation/sudoku/actions/workflows/security.yml)
